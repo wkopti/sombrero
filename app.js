@@ -14,6 +14,7 @@ connectDB();
 // Arquivos de rota
 const chicano = require('./routes/chicano');
 const campeonato = require('./routes/campeonato');
+const historico = require('./routes/historico');
 
 const app = express();
 
@@ -30,6 +31,7 @@ if(process.env.NODE_ENV === 'dev') {
 // Rotas
 app.use('/api/v1/chicano', chicano);
 app.use('/api/v1/campeonato', campeonato);
+app.use('/api/v1/historico', historico);
 
 app.use(errorHandler);
 

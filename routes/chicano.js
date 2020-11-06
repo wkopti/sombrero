@@ -4,7 +4,7 @@ const {
     getChicano, 
     createChicano, 
     updateChicano, 
-    deleteChicano 
+    deleteChicano
 } = require('../controllers/chicano');
 
 const Chicano = require('../models/Chicano');

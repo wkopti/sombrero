@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const cartola = require('../utils/cartola');
 
 const ChicanoSchema = new mongoose.Schema({
     nome: {
@@ -12,10 +13,20 @@ const ChicanoSchema = new mongoose.Schema({
         required: [true, 'Informe o ID do time no cartola'],
         trim: true,
         unique: true
+    },
+    timeCartola: {
+        type: String
     }
 },{
     toJSON: { virtuals: true},
     toObject: { virtuals: true}
+});
+
+// Buscar dados no Cartola
+ChicanoSchema.pre('save', async function(next){
+    const retornoCartola = await cartola(process.env.CARTOLA_TIME+'/'+this.idTime);
+    this.timeCartola = retornoCartola.time.nome;
+    next();
 });
 
 ChicanoSchema.virtual('campeonatos', {
