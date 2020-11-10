@@ -3,13 +3,19 @@ const dotenv = require('dotenv');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/error');
-const logger = require('./middleware/logger');
+//const logger = require('./middleware/logger');
+const mongoSanitize = require('express-mongo-sanitize');
+const helmet = require('helmet');
+const xss = require('xss-clean');
 
 // Variaveis de ambiente
 dotenv.config({ path: './config/config.env'});
 
 // Conexao com o banco 
 connectDB();
+
+//console.log(Math.trunc(Date.now()/1000));
+//console.log(statusRodada.retornarRodada);
 
 // Arquivos de rota
 const chicano = require('./routes/chicano');
@@ -25,6 +31,15 @@ app.use(express.json());
 if(process.env.NODE_ENV === 'dev') {
     app.use(morgan('dev'));
 }
+
+// Sanitize data
+app.use(mongoSanitize());
+
+// Seguranca
+app.use(helmet());
+
+// XSS attack
+app.use(xss());
 
 //app.use(logger);
 

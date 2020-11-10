@@ -17,7 +17,7 @@ router
   //.get(advancedResults(Campeonato,'participantes'),getCampeonatos)
   .get(advancedResults(Campeonato,{ 
                                     path:'participantes',
-                                    select: 'nome idTime'
+                                    select: 'nome timeCartola'
                                    }),getCampeonatos)
   .post(createCampeonato);
 

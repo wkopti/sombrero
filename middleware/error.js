@@ -9,7 +9,7 @@ const errorHandler = (err, req, res, next) => {
 
     // Mongoose - identificacao invalida
     if (err.name === 'CastError') {
-        const message = `O recurso nao foi encontrado com o id ${err.value}`;
+        const message = `O recurso nao foi encontrado`;
         error = new ErrorResponse(message, 404);
     }
 
@@ -21,7 +21,7 @@ const errorHandler = (err, req, res, next) => {
 
     // Mongoose - erro chaves duplicadas
     if (err.code === 11000) {
-        const message = `Campo duplicado`;
+        const message = `Registro ja existe`;
         error = new ErrorResponse(message, 400);
     }
 

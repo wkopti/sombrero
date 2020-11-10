@@ -12,6 +12,10 @@ const CampeonatoSchema = new mongoose.Schema({
         type: Number,
         required: [true, 'Por favor informe a rodada inicial deste campeonato']
     },
+    rodadaFinal: {
+        type: Number,
+        required: [true, 'Por favor informe a rodada final deste campeonato']
+    },
     criadoEm: {
         type: Date,
         default: Date.now
@@ -21,7 +25,22 @@ const CampeonatoSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Chicano'
         }
-    ]
+    ],
+    tipoCopa: {
+        type: Boolean,
+        default: false
+    },
+    qtdGrupos: {
+        type: Number
+    },
+    sorteioRealizado: {
+        type: Boolean,
+        default: false
+    },
+    encerrado: {
+        type: Boolean,
+        default: false
+    }
 });
 
 module.exports = mongoose.model('Campeonato',CampeonatoSchema);

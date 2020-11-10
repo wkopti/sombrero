@@ -5,9 +5,9 @@ const {
     getHistorico
 } = require('../controllers/historico');
 
-const Chicano = require('../models/Chicano');
+const Historico = require('../models/Historico');
 const advancedResults = require('../middleware/advancedResults');
-const { Router } = require('express');
+//const { Router } = require('express');
 
 const router = express.Router();
 
@@ -15,18 +15,12 @@ router
   .route('/')
   .post(createHistorico);
 
-//outer
-// .route('/')
-// .get(advancedResults(Chicano,{
-//                                 path:'campeonatos',
-//                                 select: 'nome -participantes'
-//                              }),getChicanos)
-// .post(createChicano);
-//
-//outer
-// .route('/:id')
-// .get(getChicano)
-// .put(updateChicano)
-// .delete(deleteChicano);
-//
+router
+  .route('/:idChicano')
+  .get(advancedResults(Historico),getHistorico);
+
+router
+  .route('/:idChicano/:idRodada')
+  .get(advancedResults(Historico),getHistorico);
+
 module.exports = router;
