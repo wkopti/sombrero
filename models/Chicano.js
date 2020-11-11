@@ -22,18 +22,18 @@ const ChicanoSchema = new mongoose.Schema({
     toObject: { virtuals: true}
 });
 
-// Buscar dados no Cartola
-ChicanoSchema.pre('save', async function(next){
-    const retornoCartola = await cartola(process.env.CARTOLA_TIME+'/'+this.idTime);
-    this.timeCartola = retornoCartola.time.nome;
-    next();
-});
-
 ChicanoSchema.virtual('campeonatos', {
     ref: 'Campeonato',
     localField: '_id',
     foreignField: 'participantes',
     justOne: false
+});
+
+// Buscar dados no Cartola
+ChicanoSchema.pre('save', async function(next){
+    const retornoCartola = await cartola(process.env.CARTOLA_TIME+'/'+this.idTime);
+    this.timeCartola = retornoCartola.time.nome;
+    next();
 });
 
 module.exports = mongoose.model('Chicano',ChicanoSchema);

@@ -7,7 +7,39 @@ const rodada = require('./rodada');
 
 exports.deletarHistorico = async (idChicano) => {
     await Historico.deleteMany({ idChicano: idChicano });
-}
+};
+
+async function retornarHistoricoRodada (idChicano, rodada){
+    
+    let query = { idChicano: idChicano, 
+                   'rodada': rodada };
+    
+    let historico = await Historico.findOne(query);
+
+    if(!historico){
+        const chicano = await Chicano.findById(idChicano);
+        const retornoCartola = await cartola(process.env.CARTOLA_TIME+'/'+chicano.idTime+'/'+rodada);
+
+        historico = { 
+                        idChicano: chicano._id,
+                        rodada: rodada,
+                        retornoCartola: retornoCartola,
+                        pontos: retornoCartola.pontos,
+                        pontosCampeonato: retornoCartola.pontos_campeonato
+                    };
+
+        Historico.create(historico);
+    };
+
+    return historico;
+
+};
+
+exports.buscarPontuacaoRodada = async (idChicano, rodada) => {
+
+    let historico = await retornarHistoricoRodada(idChicano, rodada);
+    return historico.pontos;
+};
 
 exports.carregarHistorico = async (idChicano, rodadaInicio, rodadaFim) => {
 

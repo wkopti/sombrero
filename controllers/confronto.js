@@ -2,20 +2,6 @@ const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const Confronto = require('../models/Confronto');
 
-/*
-exports.validarConfronto = async ( confronto ) => {
-    const confrontoEncontrado = await Confronto.find({ idCampeonato: confronto.idCampeonato, jogadores: confronto.jogadores });
-
-    if(confrontoEncontrado.length > 0){
-        confronto = confrontoEncontrado;
-    } else {
-        confronto = await Confronto.create(confronto);
-    }
-
-    return confronto;
-};
-*/
-
 async function retornarIdConfrontos(arrConfrontos){
     let confrontos = [];
     
@@ -35,7 +21,11 @@ async function retornarIdConfrontos(arrConfrontos){
     };
 
     return confrontos;
-}
+};
+
+exports.deletarConfrontosCampeonato = async (idCampeonato) => {
+    await Confronto.deleteMany({ idCampeonato: idCampeonato });
+};
 
 exports.retornarConfrontosGrupoCampeonato = async ( idCampeonato, rodadaInicioCartola,  arrGrupoCampeonato ) => {
     let confrontos = [];

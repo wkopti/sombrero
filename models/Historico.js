@@ -46,15 +46,18 @@ HistoricoSchema.statics.retornaPontuacao = async function(idChicano, rodadaInici
 
 HistoricoSchema.pre('save', async function(next){
 
-    const chicano = await Chicano.findById(this.idChicano);
+    // Se ja nao foi informado na carga
+    if(!this.retornoCartola){
+        const chicano = await Chicano.findById(this.idChicano);
 
-    const retornoCartola = await cartola(process.env.CARTOLA_TIME+'/'+chicano.idTime+'/'+this.rodada);
+        const retornoCartola = await cartola(process.env.CARTOLA_TIME+'/'+chicano.idTime+'/'+this.rodada);
 
-    if(retornoCartola){
-        this.retornoCartola = retornoCartola;
-        this.pontos = retornoCartola.pontos;
-        this.pontosCampeonato = retornoCartola.pontos_campeonato;
-    }
+        if(retornoCartola){
+            this.retornoCartola = retornoCartola;
+            this.pontos = retornoCartola.pontos;
+            this.pontosCampeonato = retornoCartola.pontos_campeonato;
+        };
+    };
 
     next();
 });

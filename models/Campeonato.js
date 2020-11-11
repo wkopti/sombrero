@@ -75,6 +75,9 @@ const CampeonatoSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
+},{
+    toJSON: { virtuals: true},
+    toObject: { virtuals: true}
 });
 
 module.exports = mongoose.model('Campeonato',CampeonatoSchema);
