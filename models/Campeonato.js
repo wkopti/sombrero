@@ -13,8 +13,7 @@ const CampeonatoSchema = new mongoose.Schema({
         required: [true, 'Por favor informe a rodada inicial deste campeonato']
     },
     rodadaFinal: {
-        type: Number,
-        required: [true, 'Por favor informe a rodada final deste campeonato']
+        type: Number
     },
     criadoEm: {
         type: Date,
@@ -33,10 +32,45 @@ const CampeonatoSchema = new mongoose.Schema({
     qtdGrupos: {
         type: Number
     },
+    qtdClassificados: {
+        type: Number
+    },
+    jogoUnicoGrupos: {
+        type: Boolean,
+        description: "Havera apenas jogo unico na fase de grupos",
+        default: true
+    },
+    jogoUnicoMataMata: {
+        type: Boolean,
+        description: "Havera apenas jogo unico na fase de mata mata",
+        default: true
+    },
+    jogoUnicoFinal: {
+        type: Boolean,
+        description: "Havera apenas jogo unico na fase final",
+        default: true
+    },
     sorteioRealizado: {
         type: Boolean,
         default: false
     },
+    grupos: [{
+        nomeGrupo: {
+            type: String
+        },
+        participantes: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Chicano'
+            }
+        ],
+        confrontos: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Confronto'
+            }
+        ]
+    }],
     encerrado: {
         type: Boolean,
         default: false

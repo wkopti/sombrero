@@ -4,7 +4,9 @@ const {
     deleteCampeonato,
     getCampeonato,
     getCampeonatos,
-    updateCampeonato
+    updateCampeonato,
+    sortearCampeonato,
+    confrontosCampeonato
 } = require('../controllers/campeonato');
 
 const Campeonato = require('../models/Campeonato');
@@ -14,16 +16,27 @@ const router = express.Router();
 
 router
   .route('/')
-  //.get(advancedResults(Campeonato,'participantes'),getCampeonatos)
   .get(advancedResults(Campeonato,{ 
                                     path:'participantes',
-                                    select: 'nome timeCartola'
-                                   }),getCampeonatos)
+                                    select: 'timeCartola nome -_id'
+                                  }),getCampeonatos)
   .post(createCampeonato);
 
 router
+  .route('/sortear/:id')
+  .get(sortearCampeonato);
+
+router
+  .route('/confrontos/:id')
+  .get(confrontosCampeonato);
+
+router
   .route('/:id')
-  .get(getCampeonato)
+  .get(advancedResults(Campeonato,{ 
+                                    path:'participantes',
+                                    select: 'nome'
+                                  }),getCampeonato)
+  //.get(getCampeonato)
   .put(updateCampeonato)
   .delete(deleteCampeonato);
 

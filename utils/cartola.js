@@ -28,4 +28,12 @@ async function consultarSite(url) {
 };
 */
 
-module.exports = consultarSite;
+const retornaRodadas = async () => {
+//async function retornaRodadas(rodadas) {
+    rodadas = await consultarSite(process.env.CARTOLA_RODADAS);
+    console.log(rodadas);
+    return rodadas;
+}
+
+
+module.exports = consultarSite, retornaRodadas;
