@@ -6,7 +6,8 @@ const {
     getCampeonatos,
     updateCampeonato,
     sortearCampeonato,
-    confrontosCampeonato
+    confrontosCampeonato,
+    classificacaoCampeonato
 } = require('../controllers/campeonato');
 
 const Campeonato = require('../models/Campeonato');
@@ -26,9 +27,13 @@ router
   .route('/sortear/:id')
   .get(sortearCampeonato);
 
-  router
+router
   .route('/confrontos/:id')
   .get(confrontosCampeonato);
+
+router
+  .route('/classificacao/:id')
+  .get(classificacaoCampeonato);
 
 router
   .route('/:id')

@@ -3,6 +3,7 @@ const asyncHandler = require('../middleware/async');
 const Campeonato = require('../models/Campeonato');
 const confronto = require('./confronto');
 const Confronto = require('../models/Confronto');
+const funcoesArray = require('../utils/funcoesArray');
 
 // @desc        Pegar todos os campeonatos
 // @route       GET /api/v1/campeonato
@@ -107,54 +108,23 @@ exports.sortearCampeonato = asyncHandler(async (req, res, next) => {
         );
     }
 
-    function embaralhar(array) {
-        var currentIndex = array.length, temporaryValue, randomIndex;
-      
-        // While there remain elements to shuffle...
-        while (0 !== currentIndex) {
-      
-          // Pick a remaining element...
-          randomIndex = Math.floor(Math.random() * currentIndex);
-          currentIndex -= 1;
-      
-          // And swap it with the current element.
-          temporaryValue = array[currentIndex];
-          array[currentIndex] = array[randomIndex];
-          array[randomIndex] = temporaryValue;
-        }
-      
-        return array;
-    };
-
-    function dividirGrupos(participantes, qtdGrupos){
-        var poteParticipantes = participantes;
-        var qtdParticipantesGrupo = Math.trunc( poteParticipantes.length / qtdGrupos);
-        var gruposDefinidos = [];
-
-        while ( gruposDefinidos.length < qtdGrupos){
-            var participantesGrupo = [];
-            participantesGrupo = poteParticipantes.splice(0,qtdParticipantesGrupo);
-            gruposDefinidos.push(participantesGrupo);
-        };
-
-        return gruposDefinidos;
-
-    };
-
     let arrayParticipantes = campeonato.participantes.slice();
-    embaralhar(arrayParticipantes);
 
-    let gruposDefinidos = dividirGrupos(arrayParticipantes, campeonato.qtdGrupos);
-    let gruposCampeonato = [];
-    
-    for (i = 0; i < gruposDefinidos.length; i++){
-        let confrontosGrupo = await confronto.retornarConfrontosGrupoCampeonato(campeonato._id, campeonato.rodadaInicio, gruposDefinidos[i]);
-        gruposCampeonato.push({ nomeGrupo: 'Grupo '+ i , participantes: gruposDefinidos[i], confrontos: confrontosGrupo});     
+    arrayParticipantes = funcoesArray.embaralhar(arrayParticipantes);
+    arrayParticipantes = funcoesArray.dividirEmGrupos(arrayParticipantes, campeonato.qtdGrupos);
+    campeonato.grupos = [];
+
+    for (i = 0; i < arrayParticipantes.length; i++){
+        let confrontosGrupos = funcoesArray.gerarConfrontoGrupo(arrayParticipantes[i]);
+        const confrontos = await confronto.gravarConfrontosGrupoCampeonato(campeonato._id, campeonato.rodadaInicio, confrontosGrupos);
+        campeonato.grupos.push({
+            nomGrupo: "Grupo "+i,
+            participantes: arrayParticipantes[i],
+            confrontos: confrontos._id
+        });
     };
 
-    campeonato.grupos = gruposCampeonato;
     campeonato.sorteioRealizado = true;
-
     await campeonato.save();
     
     res.status(200).json({ success: true, data: campeonato});
@@ -179,10 +149,52 @@ exports.confrontosCampeonato = asyncHandler(async (req, res, next) => {
         );
     };
 
+    const confrontos = await Confronto.find({ idCampeonato: campeonato._id})
+
+    res.status(200)
+        .json(
+            { success: true, 
+              data: confrontos
+            });
+
+});
+
+// @desc        Gerar confrontos campeonato
+// @route       POST /api/v1/campeonato/classificacao/:id
+// @access      Publico
+exports.classificacaoCampeonato = asyncHandler(async (req, res, next) => {
+    const campeonato = await Campeonato.findById(req.params.id);
+
+    if(!campeonato){
+        return next(
+            new ErrorResponse(`Campeonato nao encontrado com o id ${req.params.id}`, 404)
+        );
+    };
+
+    let confrontos = []
+
+    if (campeonato.tipoCopa) {
+        // Resultado dos jogos dos grupos
+        for (var i = 0; i < campeonato.grupos.length; i++){
+            /*
+            .populate({ 
+                path: "jogadores",
+                select: "nome timeCartola _id"
+            })
+            .populate({ 
+                path: "vencedor",
+                select: "timeCartola _id"
+            })
+            */
+            // Buscar todos os confrontos do grupo
+            const confrontos = await Confronto.find({"_id": { $in: campeonato.grupos[i].confrontos}});
+            console.log(confrontos);
+        };
+    };
+
     res.status(200)
         .json(
             { success: true, 
               data: campeonato
             });
-
 });

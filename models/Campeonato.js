@@ -54,6 +54,10 @@ const CampeonatoSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    faseGruposEncerrada: {
+        type: Boolean,
+        default: false
+    },
     grupos: [{
         nomeGrupo: {
             type: String
@@ -70,6 +74,19 @@ const CampeonatoSchema = new mongoose.Schema({
                 ref: 'Confronto'
             }
         ]
+    }],
+    mataMata:[{
+        participantes: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Chicano'
+            }
+        ],
+        confrontos: 
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Confronto'
+            }
     }],
     encerrado: {
         type: Boolean,

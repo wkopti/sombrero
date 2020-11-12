@@ -113,14 +113,15 @@ exports.getHistorico = asyncHandler(async (req, res, next) => {
 // @access      Publico
 exports.createHistorico = asyncHandler(async (req, res, next) => {
     const chicano = await Chicano.findById(req.body.idChicano);
-    const rodadaAtual = await rodada.retornarRodada();
-    let historico;
 
     if(!chicano){
         return next(
             new ErrorResponse(`idChicano informado no equiziste`, 404)
         );
     }
+
+    const rodadaAtual = await rodada.retornarRodada();
+    let historico;
 
     if(!req.body.rodada){
 

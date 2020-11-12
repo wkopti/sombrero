@@ -21,6 +21,7 @@ connectDB();
 const chicano = require('./routes/chicano');
 const campeonato = require('./routes/campeonato');
 const historico = require('./routes/historico');
+const confronto = require('./routes/confronto');
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use(xss());
 app.use('/api/v1/chicano', chicano);
 app.use('/api/v1/campeonato', campeonato);
 app.use('/api/v1/historico', historico);
+app.use('/api/v1/confronto',confronto);
 
 app.use(errorHandler);
 
