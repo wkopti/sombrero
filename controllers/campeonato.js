@@ -117,10 +117,11 @@ exports.sortearCampeonato = asyncHandler(async (req, res, next) => {
     for (i = 0; i < arrayParticipantes.length; i++){
         let confrontosGrupos = funcoesArray.gerarConfrontoGrupo(arrayParticipantes[i]);
         const confrontos = await confronto.gravarConfrontosGrupoCampeonato(campeonato._id, campeonato.rodadaInicio, confrontosGrupos);
+
         campeonato.grupos.push({
             nomGrupo: "Grupo "+i,
             participantes: arrayParticipantes[i],
-            confrontos: confrontos._id
+            confrontos: confrontos
         });
     };
 

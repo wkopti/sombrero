@@ -13,7 +13,18 @@ const RodadaSchema = new mongoose.Schema({
         hora: { type: Number},
         minuto: { type: Number},
         timestamp: { type: Number}
-    }
+    },
+    rodadas:[{
+        rodada_id: {
+            type: Number
+        },
+        inicio: {
+            type: Date
+        },
+        fim: {
+            type: Date
+        }
+    }]
 });
 
 

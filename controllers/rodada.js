@@ -9,12 +9,14 @@ exports.retornarRodada = async function () {
     // se nao existe, carrega a rodada atual
     if (rodada.length === 0){
 
-        const retornoCartola = await cartola.consultarSite(process.env.CARTOLA_MERCADO_STATUS);
+        const retornoCartolaRodada = await cartola(process.env.CARTOLA_MERCADO_STATUS);
+        const retornoCartolaRodadas = await cartola(process.env.CARTOLA_RODADAS);
         let rodadaNova = new Rodada();
-        rodadaNova.rodadaAtual = retornoCartola.rodada_atual;
-        rodadaNova.statusMercado = retornoCartola.status_mercado;
-        rodadaNova.temporada = retornoCartola.temporada;
-        rodadaNova.fechamento = retornoCartola.fechamento;
+        rodadaNova.rodadaAtual = retornoCartolaRodada.rodada_atual;
+        rodadaNova.statusMercado = retornoCartolaRodada.status_mercado;
+        rodadaNova.temporada = retornoCartolaRodada.temporada;
+        rodadaNova.fechamento = retornoCartolaRodada.fechamento;
+        rodadaNova.rodadas = retornoCartolaRodadas;
         Rodada.create(rodadaNova);
         rodada[0] = rodadaNova;
         
