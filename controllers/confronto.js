@@ -6,9 +6,9 @@ const rodada = require('../controllers/rodada');
 const historico = require('../controllers/historico');
 const funcoesArray = require('../utils/funcoesArray');
 
-exports.obterResultadoConfronto = async (confronto) => { 
+exports.obterResultadoConfronto = async (confronto) => {
     const rodadaCartola = await rodada.retornarRodada();
-    let arrJogadores = [];
+    let arrJogadores = [];''
 
     if (confronto.rodadaCartola < rodadaCartola.rodadaAtual) {
         confronto.jogadores.forEach(element => {
@@ -34,7 +34,7 @@ exports.obterResultadoConfronto = async (confronto) => {
         };
 
         confronto.encerrado = true;
-        await confronto.save();
+        confronto.save();
 
     };
 
@@ -65,6 +65,11 @@ exports.deletarConfrontosCampeonato = async (idCampeonato) => {
     await Confronto.deleteMany({ idCampeonato: idCampeonato });
 };
 
+exports.getConfrontosEmAberto = async (rodadaAndamento) => {
+    const confrontos = await Confronto.find({ rodadaCartola: { $lt: rodadaAndamento }, encerrado: false });
+    return confrontos;
+};
+
 exports.getConfrontosCampeonato = async (idCampeonato) => {
     const confrontos = await Confronto.find({ idCampeonato });
     return confrontos;
@@ -83,11 +88,18 @@ exports.atualizarResultadoConfronto = async (idConfronto) => {
     confronto.vencedor = null;
     confronto.saldo = null;
 
-    if (this.rodadaCartola < rodadaAtual.rodadaAtual) {
-        let jogadorA = this.jogadores[0];
-        let jogadorB = this.jogadores[1];
-        let pontuacaoJogadorA = await historico.buscarPontuacaoRodada(jogadorA, this.rodadaCartola);
-        let pontuacaoJogadorB = await historico.buscarPontuacaoRodada(jogadorB, this.rodadaCartola);
+    if (confronto.rodadaCartola < rodadaAtual.rodadaAtual) {
+
+        let jogadorA = confronto.jogadores[0];
+        let jogadorB = confronto.jogadores[1];
+        let pontuacaoJogadorA = await historico.buscarPontuacaoRodada(jogadorA, confronto.rodadaCartola);
+        let pontuacaoJogadorB = await historico.buscarPontuacaoRodada(jogadorB, confronto.rodadaCartola);
+
+        console.log("pontuacaoJogadorA");
+        console.log(pontuacaoJogadorA);
+        console.log("pontuacaoJogadorB");
+        console.log(pontuacaoJogadorB);
+        
 
         // Se houve retorno, sem falhas
         if (pontuacaoJogadorA && pontuacaoJogadorB){
@@ -104,6 +116,7 @@ exports.atualizarResultadoConfronto = async (idConfronto) => {
     };
 
     confronto.save();
+    
     return confronto;
 };
 

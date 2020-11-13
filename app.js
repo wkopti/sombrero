@@ -7,6 +7,7 @@ const errorHandler = require('./middleware/error');
 const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
 const xss = require('xss-clean');
+const verificarBase = require('./utils/verificarBase');
 
 // Variaveis de ambiente
 dotenv.config({ path: './config/config.env'});
@@ -16,6 +17,10 @@ connectDB();
 
 //console.log(Math.trunc(Date.now()/1000));
 //console.log(statusRodada.retornarRodada);
+
+// Verificacoes da base
+verificarBase.rodadaAtual();
+
 
 // Arquivos de rota
 const chicano = require('./routes/chicano');
