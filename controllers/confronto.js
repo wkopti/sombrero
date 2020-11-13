@@ -1,8 +1,45 @@
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const Confronto = require('../models/Confronto');
+const Chicano = require('../models/Chicano');
 const rodada = require('../controllers/rodada');
+const historico = require('../controllers/historico');
 const funcoesArray = require('../utils/funcoesArray');
+
+exports.obterResultadoConfronto = async (confronto) => { 
+    const rodadaCartola = await rodada.retornarRodada();
+    let arrJogadores = [];
+
+    if (confronto.rodadaCartola < rodadaCartola.rodadaAtual) {
+        confronto.jogadores.forEach(element => {
+            arrJogadores.push(element.jogador);
+        });
+    };
+
+    const historicoJogadores = await historico.obterHistoricoJogadoresRodada(arrJogadores,confronto.rodadaCartola);
+    console.log(historicoJogadores);
+
+    if (historicoJogadores){
+
+        confronto.jogadores.forEach(element => {
+            let historicoJogador = historicoJogadores.find(historico => historico.idChicano.id === (element.jogador).toString());
+            element.pontuacao = historicoJogador.pontos;
+        });
+        
+        confronto.jogadores = confronto.jogadores.sort(funcoesArray.ordernar('pontuacao', true));
+        confronto.vencedor = confronto.jogadores[0].jogador;
+        
+        if(confronto.jogadores.length == 2){
+            confronto.saldo = confronto.jogadores[0].pontuacao - confronto.jogadores[1].pontuacao;
+        };
+
+        confronto.encerrado = true;
+        await confronto.save();
+
+    };
+
+    return confronto;
+};
 
 exports.gravarConfrontosGrupoCampeonato = async (idCampeonato, rodadaInicioCartola, arrConfrontos) => {
     let confrontosGerados = [];
@@ -90,7 +127,28 @@ exports.updateConfronto = asyncHandler(async (req, res, next) => {
 // @access      Publico
 exports.createConfronto = asyncHandler(async (req, res, next) => {
     const confronto = await Confronto.create(req.body);
-   
+    const jogadores = req.body.jogadores.slice();
+
+    if(req.body.jogadores.length < 2){
+        return next(
+            new ErrorResponse(`Pelo menos 2 jogadores sao necessarios para um confronto`, 404)
+        );
+    }
+
+    let buscarJogadores = [];
+
+    req.body.jogadores.forEach(jogador => {
+        buscarJogadores.push(jogador.jogador);
+    });
+
+    const chicano = await Chicano.find({"_id": { $in: buscarJogadores}});
+
+    if(req.body.jogadores.length !== chicano.length ){
+        return next(
+            new ErrorResponse(`Há algum chicano errado na lista de jogadores => ${buscarJogadores}`, 404)
+        );
+    };
+    
     res.status(201).json({
         success: true,
         data: confronto
@@ -101,7 +159,7 @@ exports.createConfronto = asyncHandler(async (req, res, next) => {
 // @route       GET /api/v1/confronto/:id
 // @access      Publico
 exports.getConfronto = asyncHandler(async (req, res, next) => {
-    const confronto = await this.getConfrontoDetalhado(req.params.id);
+    let confronto = await this.getConfrontoDetalhado(req.params.id);
 
     if(!confronto){
         return next(
@@ -109,6 +167,10 @@ exports.getConfronto = asyncHandler(async (req, res, next) => {
         );
     };
 
+    if (!confronto.encerrado){
+        confronto = await this.obterResultadoConfronto(confronto);
+    };
+    
     res.status(201).json({
         success: true,
         data: confronto

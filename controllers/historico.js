@@ -5,6 +5,19 @@ const Chicano = require('../models/Chicano');
 const cartola = require('../utils/cartola');
 const rodada = require('./rodada');
 
+exports.obterHistoricoJogadoresRodada = async (arrJogadores, rodadaCartola) => {
+
+    const historico = await Historico.find({"idChicano": { $in: arrJogadores}, "rodada": rodadaCartola })
+                                     .select('idChicano pontos pontosCampeonato -_id')
+                                     .populate('idChicano');
+
+    if (arrJogadores.length !== historico.length){
+        return null;
+    };
+
+    return historico;
+};
+
 exports.deletarHistorico = async (idChicano) => {
     await Historico.deleteMany({ idChicano: idChicano });
 };

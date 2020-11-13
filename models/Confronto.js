@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const rodada = require('../controllers/rodada');
-const historico = require('../controllers/historico');
+const confronto = require('../controllers/confronto');
 
 const ConfrontoSchema = new mongoose.Schema({
     jogadores: [{
@@ -35,6 +34,11 @@ const ConfrontoSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Confronto'
     }
+});
+
+ConfrontoSchema.pre('save', async function(next){
+
+    next();
 });
 
 // Buscar dados da rodada
