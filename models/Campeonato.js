@@ -88,6 +88,10 @@ const CampeonatoSchema = new mongoose.Schema({
                 ref: 'Confronto'
             }
     }],
+    iniciado: {
+        type: Boolean,
+        default: false
+    },
     encerrado: {
         type: Boolean,
         default: false

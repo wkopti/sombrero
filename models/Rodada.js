@@ -24,7 +24,10 @@ const RodadaSchema = new mongoose.Schema({
         fim: {
             type: Date
         }
-    }]
+    }],
+    cartolaPartidas: {
+        type: Object
+    }
 });
 
 

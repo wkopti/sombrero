@@ -3,49 +3,57 @@ const asyncHandler = require('../middleware/async');
 const Rodada = require('../models/Rodada');
 const cartola = require('../utils/cartola');
 
+async function retornarPartidasCartola() {
+    const rodadasCartola = await Rodada.findOne({});
+    return rodadasCartola.cartolaPartidas.partidas;
+};
+
+exports.retornarPartidas = async function () {
+    const rodadas = await retornarPartidasCartola();
+    const partidas = rodadas.cartolaPartidas.partidas;
+    return partidas;
+};
+
+exports.retornarPartidasValidas = async function () {
+    const rodadas = await retornarPartidasCartola();
+    const partidasValidas = rodadas.filter(function(partida) {
+        return partida.valida === true;
+    });
+    return partidasValidas;
+};
+
+exports.retornarPartidasEmAberto = async function() {
+    const dataAtual = new Date;
+    const partidasValidas = await this.retornarPartidasValidas();
+    const partidasEmAberto = partidasValidas.filter(function(partida) {
+        let dataPartida = new Date(partida.partida_data);
+        return dataPartida >= dataAtual.getTime();
+    });
+    return partidasEmAberto;
+}
+
 exports.retornarRodada = async function () {
-    rodada = await Rodada.find({});
+    rodada = await Rodada.findOne({});
 
     // se nao existe, carrega a rodada atual
     if (rodada.length === 0){
 
         const retornoCartolaRodada = await cartola(process.env.CARTOLA_MERCADO_STATUS);
         const retornoCartolaRodadas = await cartola(process.env.CARTOLA_RODADAS);
+        const retornoCartolaPartidas = await cartola(process.env.CARTOLA_PARTIDAS);
         let rodadaNova = new Rodada();
         rodadaNova.rodadaAtual = retornoCartolaRodada.rodada_atual;
         rodadaNova.statusMercado = retornoCartolaRodada.status_mercado;
         rodadaNova.temporada = retornoCartolaRodada.temporada;
         rodadaNova.fechamento = retornoCartolaRodada.fechamento;
         rodadaNova.rodadas = retornoCartolaRodadas;
+        rodadaNova.cartolaPartidas = retornoCartolaPartidas;
         Rodada.create(rodadaNova);
-        rodada[0] = rodadaNova;
-        
+        rodada = rodadaNova;
     };
 
-    return rodada[0];
-}
-
-/*
-exports.retornarRodada = asyncHandler(async () => {
-    rodada = await Rodada.find({});
-
-    // se nao existe, carrega a rodada atual
-    if (rodada.length === 0){
-        console.log('vou criar a rodada');
-        const retornoCartola = await cartola.consultarSite(process.env.CARTOLA_MERCADO_STATUS);
-        let rodadaNova = new Rodada();
-        rodadaNova.rodadaAtual = retornoCartola.rodada_atual;
-        rodadaNova.statusMercado = retornoCartola.status_mercado;
-        rodadaNova.temporada = retornoCartola.temporada;
-        rodadaNova.fechamento = retornoCartola.fechamento;
-        Rodada.create(rodadaNova);
-        rodada[0] = rodadaNova;
-    };
-
-    return rodada[0];
-
-});
-*/
+    return rodada;
+};
 
 exports.getRodada = asyncHandler(async (req, res, next) => {
 

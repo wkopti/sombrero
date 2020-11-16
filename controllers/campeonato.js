@@ -5,6 +5,68 @@ const confronto = require('./confronto');
 const Confronto = require('../models/Confronto');
 const funcoesArray = require('../utils/funcoesArray');
 
+exports.getClassificaoGrupos = async(campeonato) => {
+    const grupos = campeonato.grupos;
+    const gruposClassificacao = [];
+
+    for (let index = 0; index < grupos.length; index++) {
+        const grupo = grupos[index];
+        let grupoResultados = [];
+        let grupoPontuacao = [];
+        grupo.confrontos.forEach(confronto => {
+            if (confronto.encerrado === true){
+                confronto.jogadores.forEach(jogador => {
+                    let pontos;
+                    let saldo;
+
+                    // Quem venceu
+                    if (jogador.jogador.toString() === confronto.vencedor.toString()){
+                        pontos = 3;
+                        saldo = confronto.saldo;
+                    } else {
+                        pontos = 0;
+                        saldo = confronto.saldo * -1;
+                    }
+                    grupoResultados.push({ jogador: jogador.jogador, pontos, saldo })
+                });
+            };  
+        });
+
+        grupo.participantes.forEach(participante => {
+            const resultadosParticipante = grupoResultados.filter((resultado) => resultado.jogador.toString() === participante.toString());
+            const totalPontos = funcoesArray.somarPorChave(resultadosParticipante,'pontos');
+            const saldoFinal = funcoesArray.somarPorChave(resultadosParticipante,'saldo');
+            grupoPontuacao.push({ grupo: grupo._id, jogador: participante, totalPontos, saldoFinal});
+        });
+
+
+        // tem que arrumar aqui
+        grupoPontuacao.sort(function(a, b){
+            if (a.totalPontos < b.totalPontos) {
+                if ((a.totalPontos < b.totalPontos)){
+                    return 2;
+                }
+                else {
+                    return -1;
+                }
+            } else {
+                return 3;
+            }
+            return (a.totalPontos < b.totalPontos) ? 1 : -1;
+        });
+
+        gruposClassificacao.push(grupoPontuacao);
+
+    };
+
+    return gruposClassificacao;
+};
+
+exports.getCampeonatosEmAberto = async() => {
+    const campeonatos = await Campeonato.find({ encerrado: false, iniciado: true }).populate('grupos.confrontos');
+    return campeonatos;
+};
+
 // @desc        Pegar todos os campeonatos
 // @route       GET /api/v1/campeonato
 // @access      Publico
@@ -16,7 +78,7 @@ exports.getCampeonatos = asyncHandler(async (req, res, next) => {
 // @route       GET /api/v1/campeonato/:id
 // @access      Publico
 exports.getCampeonato = asyncHandler(async (req, res, next) => {
-    const campeonato = await (await Campeonato.findById(req.params.id).populate('participantes'));
+    const campeonato = await (await Campeonato.findById(req.params.id).populate('participantes').populate('grupos.confrontos'));
 
     if(!campeonato){
         return next(
@@ -119,12 +181,13 @@ exports.sortearCampeonato = asyncHandler(async (req, res, next) => {
         const confrontos = await confronto.gravarConfrontosGrupoCampeonato(campeonato._id, campeonato.rodadaInicio, confrontosGrupos);
 
         campeonato.grupos.push({
-            nomGrupo: "Grupo "+i,
+            nomeGrupo: "Grupo "+i,
             participantes: arrayParticipantes[i],
             confrontos: confrontos
         });
     };
 
+    campeonato.iniciado = true;
     campeonato.sorteioRealizado = true;
     await campeonato.save();
     

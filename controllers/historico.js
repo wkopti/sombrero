@@ -5,23 +5,6 @@ const Chicano = require('../models/Chicano');
 const cartola = require('../utils/cartola');
 const rodada = require('./rodada');
 
-exports.obterHistoricoJogadoresRodada = async (arrJogadores, rodadaCartola) => {
-
-    const historico = await Historico.find({"idChicano": { $in: arrJogadores}, "rodada": rodadaCartola })
-                                     .select('idChicano pontos pontosCampeonato -_id')
-                                     .populate('idChicano');
-
-    if (arrJogadores.length !== historico.length){
-        return null;
-    };
-
-    return historico;
-};
-
-exports.deletarHistorico = async (idChicano) => {
-    await Historico.deleteMany({ idChicano: idChicano });
-};
-
 async function retornarHistoricoRodada (idChicano, rodada){
     
     let query = { idChicano: idChicano, 
@@ -46,6 +29,53 @@ async function retornarHistoricoRodada (idChicano, rodada){
 
     return historico;
 
+};
+
+exports.obterHistoricoJogadoresRodada = async (arrJogadores, rodadaCartola) => {
+    const rodadaAtual = await rodada.retornarRodada();
+    const historico = await Historico.find({"idChicano": { $in: arrJogadores}, "rodada": rodadaCartola })
+                                     .select('idChicano pontos pontosCampeonato id')
+                                     .populate('idChicano');
+                                     //console.log(historico);
+                                     //console.log("passou");
+    if (arrJogadores.length !== historico.length){
+        if (rodadaCartola < rodadaAtual.rodadaAtual){
+            let jogadoresValidados = 0;
+
+            // Verificar qual jogador nao possui o historico
+            for (let index = 0; index < arrJogadores.length; index++) {
+                const jogador = arrJogadores[index];
+                const indice = historico.findIndex(historico => historico.idChicano.id.toString() === jogador.toString());
+                if (indice === -1 ) {
+                    const historicoJogador = await retornarHistoricoRodada(jogador, rodadaCartola);
+                    if (historicoJogador) {
+                        jogadoresValidados++;
+                    }
+                } else {
+                    jogadoresValidados++;
+                }
+            };
+
+            if (arrJogadores === jogadoresValidados){
+                console.log("Tudo ok")
+                const historico = await Historico.find({"idChicano": { $in: arrJogadores}, "rodada": rodadaCartola })
+                                     .select('idChicano pontos pontosCampeonato id')
+                                     .populate('idChicano');
+                return historico;
+            };
+            return null;
+
+        } else {
+            return null;
+        };
+    };
+
+    return historico;
+};
+
+
+exports.deletarHistorico = async (idChicano) => {
+    await Historico.deleteMany({ idChicano: idChicano });
 };
 
 exports.buscarPontuacaoRodada = async (idChicano, rodada) => {

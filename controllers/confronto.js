@@ -8,7 +8,7 @@ const funcoesArray = require('../utils/funcoesArray');
 
 exports.obterResultadoConfronto = async (confronto) => {
     const rodadaCartola = await rodada.retornarRodada();
-    let arrJogadores = [];''
+    let arrJogadores = [];
 
     if (confronto.rodadaCartola < rodadaCartola.rodadaAtual) {
         confronto.jogadores.forEach(element => {
@@ -17,7 +17,6 @@ exports.obterResultadoConfronto = async (confronto) => {
     };
 
     const historicoJogadores = await historico.obterHistoricoJogadoresRodada(arrJogadores,confronto.rodadaCartola);
-    console.log(historicoJogadores);
 
     if (historicoJogadores){
 
@@ -95,12 +94,6 @@ exports.atualizarResultadoConfronto = async (idConfronto) => {
         let pontuacaoJogadorA = await historico.buscarPontuacaoRodada(jogadorA, confronto.rodadaCartola);
         let pontuacaoJogadorB = await historico.buscarPontuacaoRodada(jogadorB, confronto.rodadaCartola);
 
-        console.log("pontuacaoJogadorA");
-        console.log(pontuacaoJogadorA);
-        console.log("pontuacaoJogadorB");
-        console.log(pontuacaoJogadorB);
-        
-
         // Se houve retorno, sem falhas
         if (pontuacaoJogadorA && pontuacaoJogadorB){
             if (pontuacaoJogadorA > pontuacaoJogadorB){
@@ -139,7 +132,6 @@ exports.updateConfronto = asyncHandler(async (req, res, next) => {
 // @route       POST /api/v1/confronto/:id
 // @access      Publico
 exports.createConfronto = asyncHandler(async (req, res, next) => {
-    const confronto = await Confronto.create(req.body);
     const jogadores = req.body.jogadores.slice();
 
     if(req.body.jogadores.length < 2){
@@ -161,6 +153,8 @@ exports.createConfronto = asyncHandler(async (req, res, next) => {
             new ErrorResponse(`Há algum chicano errado na lista de jogadores => ${buscarJogadores}`, 404)
         );
     };
+
+    const confronto = await Confronto.create(req.body);
     
     res.status(201).json({
         success: true,

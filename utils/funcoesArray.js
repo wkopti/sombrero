@@ -88,4 +88,9 @@ function gerarConfrontoGrupo(array){
     return confrontos;
 };
 
-module.exports = { ordernar, embaralhar, dividirEmGrupos, gerarConfrontoGrupo };
+//const sumByKey = (arr, key) => arr.reduce((acc, current) => acc + current[key], 0);
+function somarPorChave(array, chave) {
+    return array.reduce((acc, current) => acc + current[chave], 0);
+};
+
+module.exports = { ordernar, embaralhar, dividirEmGrupos, gerarConfrontoGrupo, somarPorChave };
