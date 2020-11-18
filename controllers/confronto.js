@@ -6,6 +6,12 @@ const rodada = require('../controllers/rodada');
 const historico = require('../controllers/historico');
 const funcoesArray = require('../utils/funcoesArray');
 
+
+exports.confrontosFinalizados = async(arrConfrontos) => {
+    const confrontos = await Confronto.find({"_id": { $in: arrConfrontos}, encerrado: true});
+    return (confrontos.length) === arrConfrontos.length ? true : false;
+};
+
 exports.obterResultadoConfronto = async (confronto) => {
     const rodadaCartola = await rodada.retornarRodada();
     let arrJogadores = [];

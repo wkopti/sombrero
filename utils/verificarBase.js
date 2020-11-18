@@ -108,14 +108,21 @@ const rodadaAtual = async() => {
                     let grupos = await campeonato.getClassificaoGrupos(campeonatoAberto);
 
                     campeonatoAberto.mataMata.participantes = grupos.classificados;
-                    //console.log(grupos.classificados)
             
                     //gerarConfrontoMataMata
                     let confrontosMataMata = await campeonato.gerarConfrontoMataMata(campeonatoAberto.id, grupos.classificados, ultimaRodadaFaseGrupos, campeonatoAberto.jogoUnicoMataMata, campeonatoAberto.jogoUnicoFinal);
                     campeonatoAberto.mataMata.confrontos = confrontosMataMata;
 
-                    //campeonatoAberto.save();
+                    campeonatoAberto.save();
                 };
+            };
+
+            if(campeonatoAberto.tipoCopa === true && campeonatoAberto.faseGruposEncerrada === true){
+    
+                if (confronto.confrontosFinalizados(campeonatoAberto.mataMata.confrontos)){
+                    console.log("deu certo")
+                };
+
             };
         };
 
