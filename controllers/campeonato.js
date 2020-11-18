@@ -308,33 +308,13 @@ exports.confrontosCampeonato = asyncHandler(async (req, res, next) => {
 // @route       POST /api/v1/campeonato/classificacao/:id
 // @access      Publico
 exports.classificacaoCampeonato = asyncHandler(async (req, res, next) => {
-    const campeonato = await Campeonato.findById(req.params.id);
+    const campeonato = await Campeonato.findById(req.params.id).populate('mataMata.confrontos').populate('participantes');
+    //const campeonato = await (await Campeonato.findById(req.params.id).populate('participantes').populate('grupos.confrontos'));
 
     if(!campeonato){
         return next(
             new ErrorResponse(`Campeonato nao encontrado com o id ${req.params.id}`, 404)
         );
-    };
-
-    let confrontos = []
-
-    if (campeonato.tipoCopa) {
-        // Resultado dos jogos dos grupos
-        for (var i = 0; i < campeonato.grupos.length; i++){
-            /*
-            .populate({ 
-                path: "jogadores",
-                select: "nome timeCartola _id"
-            })
-            .populate({ 
-                path: "vencedor",
-                select: "timeCartola _id"
-            })
-            */
-            // Buscar todos os confrontos do grupo
-            const confrontos = await Confronto.find({"_id": { $in: campeonato.grupos[i].confrontos}});
-            console.log(confrontos);
-        };
     };
 
     res.status(200)

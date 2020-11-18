@@ -104,7 +104,22 @@ const CampeonatoSchema = new mongoose.Schema({
     encerrado: {
         type: Boolean,
         default: false
-    }
+    },
+    classificacao: [{
+        posicao: {
+            type: Number
+        },
+        jogador: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Chicano'
+        },
+        totalPontos: {
+            type: Number
+        },
+        totalJogos: {
+            type: Number
+        }
+    }]
 },{
     toJSON: { virtuals: true},
     toObject: { virtuals: true}

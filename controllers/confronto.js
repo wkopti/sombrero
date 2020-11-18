@@ -9,7 +9,8 @@ const funcoesArray = require('../utils/funcoesArray');
 
 exports.confrontosFinalizados = async(arrConfrontos) => {
     const confrontos = await Confronto.find({"_id": { $in: arrConfrontos}, encerrado: true});
-    return (confrontos.length) === arrConfrontos.length ? true : false;
+    //return (confrontos.length) === arrConfrontos.length ? true : false;
+    return confrontos;
 };
 
 exports.obterResultadoConfronto = async (confronto) => {

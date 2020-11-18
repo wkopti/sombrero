@@ -118,9 +118,38 @@ const rodadaAtual = async() => {
             };
 
             if(campeonatoAberto.tipoCopa === true && campeonatoAberto.faseGruposEncerrada === true){
-    
-                if (confronto.confrontosFinalizados(campeonatoAberto.mataMata.confrontos)){
-                    console.log("deu certo")
+                const confrontosMataMata = await confronto.confrontosFinalizados(campeonatoAberto.mataMata.confrontos);
+                const classificacaoMataMata = [];
+                
+                // Se o numero de confrontos encerrados retornados é igual ao numero de confrontos do campeonato, o campeonato esta finalizado
+                if (confrontosMataMata.length === campeonatoAberto.mataMata.confrontos.length) {
+                    confrontosMataMata.sort(funcoesArray.ordernar('rodadaCartola', true)); 
+                    const ultimaRodadaMataMata = confrontosMataMata[0].rodadaCartola;
+                    const rodadaFinalMataMata = confrontosMataMata.filter(confronto => confronto.rodadaCartola === ultimaRodadaMataMata);
+                    rodadaFinalMataMata.forEach(resultado => {
+                        let classificacaoVencedor;
+                        let classificacaoPerdedor;
+                        if (resultado.linkMataMata.vencedores){
+                            classificacaoVencedor = 1;
+                            classificacaoPerdedor = 2;
+                        } else {
+                            classificacaoVencedor = 3;
+                            classificacaoPerdedor = 4;
+                        };
+                        resultado.jogadores.sort(funcoesArray.ordernar('pontuacao', true));
+
+                        let vencedor = resultado.jogadores[0];
+                        let perdedor = resultado.jogadores[1];
+
+                        classificacaoMataMata.push({posicao: classificacaoVencedor, jogador: vencedor.jogador});
+                        classificacaoMataMata.push({posicao: classificacaoPerdedor, jogador: perdedor.jogador});                     
+                    });
+                };
+
+                if (confrontosMataMata.length > 0){
+                    campeonatoAberto.encerrado = true;
+                    campeonatoAberto.classificacao = classificacaoMataMata;
+                    campeonatoAberto.save();
                 };
 
             };
