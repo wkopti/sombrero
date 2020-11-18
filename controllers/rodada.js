@@ -32,24 +32,34 @@ exports.retornarPartidasEmAberto = async function() {
     return partidasEmAberto;
 }
 
+async function retornarRodadaCartola() {
+    const retornoCartolaRodada = await cartola(process.env.CARTOLA_MERCADO_STATUS);
+    const retornoCartolaRodadas = await cartola(process.env.CARTOLA_RODADAS);
+    const retornoCartolaPartidas = await cartola(process.env.CARTOLA_PARTIDAS);
+    let rodadaNova = new Rodada();
+    rodadaNova.rodadaAtual = retornoCartolaRodada.rodada_atual;
+    rodadaNova.statusMercado = retornoCartolaRodada.status_mercado;
+    rodadaNova.temporada = retornoCartolaRodada.temporada;
+    rodadaNova.fechamento = retornoCartolaRodada.fechamento;
+    rodadaNova.rodadas = retornoCartolaRodadas;
+    rodadaNova.cartolaPartidas = retornoCartolaPartidas;
+    Rodada.create(rodadaNova);
+    return rodadaNova;
+}
+
+exports.recarregarRodada = async function (){
+    let rodada;
+    rodada = await Rodada.findOneAndDelete({});
+    rodada = await retornarRodadaCartola();
+    return rodada;
+}
+
 exports.retornarRodada = async function () {
     rodada = await Rodada.findOne({});
 
     // se nao existe, carrega a rodada atual
-    if (rodada.length === 0){
-
-        const retornoCartolaRodada = await cartola(process.env.CARTOLA_MERCADO_STATUS);
-        const retornoCartolaRodadas = await cartola(process.env.CARTOLA_RODADAS);
-        const retornoCartolaPartidas = await cartola(process.env.CARTOLA_PARTIDAS);
-        let rodadaNova = new Rodada();
-        rodadaNova.rodadaAtual = retornoCartolaRodada.rodada_atual;
-        rodadaNova.statusMercado = retornoCartolaRodada.status_mercado;
-        rodadaNova.temporada = retornoCartolaRodada.temporada;
-        rodadaNova.fechamento = retornoCartolaRodada.fechamento;
-        rodadaNova.rodadas = retornoCartolaRodadas;
-        rodadaNova.cartolaPartidas = retornoCartolaPartidas;
-        Rodada.create(rodadaNova);
-        rodada = rodadaNova;
+    if (!rodada){
+        rodada = await retornarRodadaCartola();
     };
 
     return rodada;

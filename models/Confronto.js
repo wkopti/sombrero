@@ -30,9 +30,14 @@ const ConfrontoSchema = new mongoose.Schema({
     saldo: {
         type: Number
     },
-    idConfrontoAnterior: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Confronto'
+    linkMataMata: {
+        vencedores: {
+            type: Boolean
+        },
+        jogos:[{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Confronto'
+        }]
     }
 });
 

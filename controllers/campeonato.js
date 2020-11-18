@@ -5,14 +5,93 @@ const confronto = require('./confronto');
 const Confronto = require('../models/Confronto');
 const funcoesArray = require('../utils/funcoesArray');
 
+exports.gerarConfrontoMataMata = async( idCampeonato, classificados, rodadaInicioMataMata, jogoUnicoMataMata, jogoUnicoFinal ) => {
+    const participantes = classificados.slice();
+    const qtdClassificados = classificados.length;
+    const qtdValida = [2, 4, 8, 16, 32, 64];
+    const confrontosMataMata = [];
+
+    if(!qtdValida.includes(qtdClassificados)){
+        return ("Nao tem a qtd necessaria para a geracao de mata mata");
+    };
+
+    let qtdFases = (qtdClassificados > 2) ? qtdClassificados / 2 : 1;
+    let rodadaCartola = rodadaInicioMataMata;
+
+    while (qtdFases >= 1){
+        let confronto;
+
+        // Primeira carga -> Melhor contra pior
+        if (confrontosMataMata.length === 0) {
+            while(participantes.length > 0){
+                let jogadorUm = participantes.splice(0,1);
+                let jogadorDois = participantes.splice(-1,1);
+                confronto = {
+                    jogadores: [{jogador: jogadorUm[0].jogador}, {jogador: jogadorDois[0].jogador}],
+                    rodadaCartola,
+                    idCampeonato
+                };
+                confronto = await Confronto.create(confronto);
+                confrontosMataMata.push(confronto);
+                //if ((qtdFases >= 2 && !jogoUnicoMataMata) || (qtdFases == 1 && !jogoUnicoFinal)){
+                //    rodadaCartola++;
+                //    confronto = {
+                //        jogadores: [jogadorUm[0].jogador, jogadorDois[0].jogador],
+                //        rodadaCartola,
+                //        idCampeonato
+                //    };
+                //    confronto = await Confronto.create(confronto);
+                //    confrontosMataMata.push(confronto);
+                //};
+            };
+        } else {
+            let jogosFaseAnterior = confrontosMataMata.filter(confronto => confronto.rodadaCartola === rodadaCartola);
+            if (jogosFaseAnterior){
+                rodadaCartola = rodadaCartola + 1;
+                while(jogosFaseAnterior.length > 0){
+                    let jogoUm = jogosFaseAnterior.splice(0,1);
+                    let jogoDois = jogosFaseAnterior.splice(0,1);
+                    confronto = {
+                        rodadaCartola,
+                        idCampeonato,
+                        linkMataMata: {
+                            vencedores: true,
+                            jogos:[jogoUm[0]._id, jogoDois[0]._id]
+                        }
+                    };
+                    confronto = await Confronto.create(confronto);
+                    confrontosMataMata.push(confronto);
+                    if (qtdFases == 1){
+                        confronto = {
+                            rodadaCartola,
+                            idCampeonato,
+                            linkMataMata: {
+                                vencedores: false,
+                                jogos:[jogoUm[0]._id, jogoDois[0]._id]
+                            }
+                        };
+                        confronto = await Confronto.create(confronto);
+                        confrontosMataMata.push(confronto);
+                    };
+                };
+            };
+        };
+        qtdFases = qtdFases / 2;
+    };
+    return confrontosMataMata;
+};
+
 exports.getClassificaoGrupos = async(campeonato) => {
     const grupos = campeonato.grupos;
-    const gruposClassificacao = [];
+    const classificacaoGrupo = [];     // Classificacao de todos os grupos
+    const classificados = [];          // Quem passaria para a proxima fase
+    const classificacaoGeral = [];     // Classificacao geral independente do grupo
 
     for (let index = 0; index < grupos.length; index++) {
-        const grupo = grupos[index];
-        let grupoResultados = [];
-        let grupoPontuacao = [];
+        const grupo = grupos[index];   // Grupo unitario
+        const grupoResultados = [];    // Resultado individual de cada jogo do grupo
+        const grupoPontuacao = [];     // Resultado agrupado - Classificacao do grupo
+
         grupo.confrontos.forEach(confronto => {
             if (confronto.encerrado === true){
                 confronto.jogadores.forEach(jogador => {
@@ -36,30 +115,32 @@ exports.getClassificaoGrupos = async(campeonato) => {
             const resultadosParticipante = grupoResultados.filter((resultado) => resultado.jogador.toString() === participante.toString());
             const totalPontos = funcoesArray.somarPorChave(resultadosParticipante,'pontos');
             const saldoFinal = funcoesArray.somarPorChave(resultadosParticipante,'saldo');
-            grupoPontuacao.push({ grupo: grupo._id, jogador: participante, totalPontos, saldoFinal});
+            grupoPontuacao.push({ jogador: participante, totalPontos, saldoFinal });
+            classificacaoGeral.push({ jogador: participante, totalPontos, saldoFinal });
         });
 
-
-        // tem que arrumar aqui
-        grupoPontuacao.sort(function(a, b){
-            if (a.totalPontos < b.totalPontos) {
-                if ((a.totalPontos < b.totalPontos)){
-                    return 2;
-                }
-                else {
-                    return -1;
-                }
-            } else {
-                return 3;
-            }
-            return (a.totalPontos < b.totalPontos) ? 1 : -1;
+        // Ordenar a pontuacao do grupo
+        grupoPontuacao.sort(funcoesArray.ordernarPorPontoSaldo);
+        // Classificacao do grupo atualizada
+        classificacaoGrupo.push({ grupoId: grupo._id, nomeGrupo: grupo.nomeGrupo, classificacao: grupoPontuacao})
+        // Quem passa para a proxima fase
+        grupoPontuacao.slice(0,campeonato.qtdClassificados).forEach(classificado => {
+            classificados.push(classificado);
         });
-
-        gruposClassificacao.push(grupoPontuacao);
-
     };
 
-    return gruposClassificacao;
+    // Ordenar a classificacao geral
+    classificacaoGeral.sort(funcoesArray.ordernarPorPontoSaldo);
+    // Ordenar os classificados para a proxima fase
+    classificados.sort(funcoesArray.ordernarPorPontoSaldo);
+
+    let retorno = {
+       classificacaoGrupo,
+       classificacaoGeral,
+       classificados
+    };
+
+    return retorno;
 };
 
 exports.getCampeonatosEmAberto = async() => {

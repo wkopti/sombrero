@@ -11,6 +11,35 @@ exports.obterResultadoConfronto = async (confronto) => {
     let arrJogadores = [];
 
     if (confronto.rodadaCartola < rodadaCartola.rodadaAtual) {
+
+        // Se for um confronto de mata mata 
+        if(confronto.linkMataMata.jogos.length > 0){
+            const confrontos = await Confronto.find({"_id": { $in: confronto.linkMataMata.jogos}});
+            
+            if(confrontos.length === confronto.linkMataMata.jogos.length){
+                const vencedores = [];
+                const perdedores = [];
+                confrontos.forEach(element => {
+                    element.jogadores.sort(funcoesArray.ordernar('pontuacao', true));
+                    let jogadores = element.jogadores.slice();
+                    vencedores.push(jogadores[0]);
+                    perdedores.push(jogadores[1]);
+                });
+                if(confronto.linkMataMata.vencedores){
+                    while (vencedores.length > 0){
+                        let vencedor = vencedores.splice(0,1);
+                        confronto.jogadores.push({jogador: vencedor[0].jogador});
+                    }; 
+                }else{
+                    while (perdedores.length > 0){
+                        let perdedor = perdedores.splice(0,1);
+                        confronto.jogadores.push({jogador: perdedor[0].jogador});
+                    };
+                };
+            };
+            await confronto.save();
+        };
+
         confronto.jogadores.forEach(element => {
             arrJogadores.push(element.jogador);
         });
@@ -134,7 +163,7 @@ exports.updateConfronto = asyncHandler(async (req, res, next) => {
 exports.createConfronto = asyncHandler(async (req, res, next) => {
     const jogadores = req.body.jogadores.slice();
 
-    if(req.body.jogadores.length < 2){
+    if(jogadores < 2){
         return next(
             new ErrorResponse(`Pelo menos 2 jogadores sao necessarios para um confronto`, 404)
         );
@@ -142,13 +171,13 @@ exports.createConfronto = asyncHandler(async (req, res, next) => {
 
     let buscarJogadores = [];
 
-    req.body.jogadores.forEach(jogador => {
+    jogadores.forEach(jogador => {
         buscarJogadores.push(jogador.jogador);
     });
 
     const chicano = await Chicano.find({"_id": { $in: buscarJogadores}});
 
-    if(req.body.jogadores.length !== chicano.length ){
+    if(jogadores.length !== chicano.length ){
         return next(
             new ErrorResponse(`Há algum chicano errado na lista de jogadores => ${buscarJogadores}`, 404)
         );

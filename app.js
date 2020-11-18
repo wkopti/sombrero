@@ -21,7 +21,6 @@ connectDB();
 // Verificacoes da base
 verificarBase.rodadaAtual();
 
-
 // Arquivos de rota
 const chicano = require('./routes/chicano');
 const campeonato = require('./routes/campeonato');

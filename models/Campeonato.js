@@ -75,19 +75,28 @@ const CampeonatoSchema = new mongoose.Schema({
             }
         ]
     }],
-    mataMata:[{
+    mataMata:{
         participantes: [
             {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'Chicano'
+                jogador: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'Chicano'
+                },
+                totalPontos: {
+                    type: Number
+                },
+                saldoFinal: {
+                    type: Number
+                }  
             }
         ],
-        confrontos: 
+        confrontos: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Confronto'
             }
-    }],
+        ]
+    },
     iniciado: {
         type: Boolean,
         default: false

@@ -88,9 +88,20 @@ function gerarConfrontoGrupo(array){
     return confrontos;
 };
 
-//const sumByKey = (arr, key) => arr.reduce((acc, current) => acc + current[key], 0);
 function somarPorChave(array, chave) {
     return array.reduce((acc, current) => acc + current[chave], 0);
 };
 
-module.exports = { ordernar, embaralhar, dividirEmGrupos, gerarConfrontoGrupo, somarPorChave };
+// Orderna por pontos e saldo
+function ordernarPorPontoSaldo(a, b){
+    if (a.totalPontos > b.totalPontos){
+        return -1;
+    };
+    if (a.totalPontos === b.totalPontos){
+        if(a.saldoFinal > b.saldoFinal){
+            return -1;
+        }
+    }
+}
+
+module.exports = { ordernar, embaralhar, dividirEmGrupos, gerarConfrontoGrupo, somarPorChave, ordernarPorPontoSaldo };
