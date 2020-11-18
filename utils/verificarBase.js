@@ -1,6 +1,7 @@
 const rodada = require('../controllers/rodada');
 const confronto = require('../controllers/confronto');
-const campeonato = require('../controllers/campeonato'); 
+const campeonato = require('../controllers/campeonato');
+const historico = require('../controllers/historico'); 
 const funcoesArray = require('./funcoesArray');
 
 async function atualizarConfronto(confrontoAtual) {
@@ -33,12 +34,13 @@ const rodadaAtual = async() => {
     if(rodadaAtualData.rodada_id === rodadaBase.rodadaAtual){
         msg = msg+"OK";
         rodadaAndamento = rodadaBase.rodadaAtual;
+    
     } else {
         // Quais sao as partidas que valem para o cartola?
         const partidasValidas = await rodada.retornarPartidasValidas();
         // Quais sao as partidas que faltam na rodada?
         const partidasEmAberto = await rodada.retornarPartidasEmAberto();
-        //console.log(partidasEmAberto);
+
         let qtdPartidasEmAberto = 0;
 
         if (partidasEmAberto) {
@@ -117,6 +119,48 @@ const rodadaAtual = async() => {
                 };
             };
 
+            // Campeonato pontos corridos
+            if (campeonatoAberto.tipoCopa === false && campeonatoAberto.encerrado === false ){
+                const rodadaFim = campeonatoAberto.rodadaFinal || rodadaBase.rodadaAtual;
+                const classificacaoAtual = campeonatoAberto.classificacao.slice();
+                const classificacaoAtualizada = [];
+                //console.log("Classificacao atual")
+                //console.log(classificacaoAtual);
+
+                for (let index = 0; index < campeonatoAberto.participantes.length; index++) {
+                    const participante = campeonatoAberto.participantes[index];
+                    const jogosComputados = campeonatoAberto.classificacao.filter(classificacao => classificacao.jogador.toString() === participante.toString());
+                    const jogosComputar = [];
+                    const rodadaInicioComputar = jogosComputados.totalJogos || 0;
+                    for (let computarJogo = rodadaInicioComputar + 1; computarJogo <= rodadaFim; computarJogo++) {
+                        const pontosRodada = await historico.buscarPontuacaoRodada(participante,computarJogo);
+                        if(pontosRodada){
+                            jogosComputar.push({jogador: participante, rodada: computarJogo, pontuacao: pontosRodada});
+                        };
+                    };
+                    let totalPontosComputados = jogosComputados.totalPontos || 0;
+                    let totalJogosComputados = jogosComputados.totalJogos || 0;
+                    jogosComputar.forEach(jogo => {
+                        totalPontosComputados = totalPontosComputados + jogo.pontuacao;
+                        totalJogosComputados = totalJogosComputados + 1;
+                    });
+                    
+                    classificacaoAtualizada.push({posicao: null, jogador: participante, totalPontos: totalPontosComputados, totalJogos:  totalJogosComputados});
+                };
+
+                classificacaoAtualizada.sort(funcoesArray.ordernar('totalPontos',true))
+                for (let index = 0; index < classificacaoAtualizada.length; index++) {
+                    const element = classificacaoAtualizada[index];
+                    element.posicao = index + 1;
+                };
+
+                //console.log("Classificacao atualizada")
+                //console.log(classificacaoAtualizada)
+                campeonatoAberto.classificacao = classificacaoAtualizada;
+                campeonatoAberto.save();
+            };
+
+            // Campeonato do tipo copa
             if(campeonatoAberto.tipoCopa === true && campeonatoAberto.faseGruposEncerrada === true){
                 const confrontosMataMata = await confronto.confrontosFinalizados(campeonatoAberto.mataMata.confrontos);
                 const classificacaoMataMata = [];
@@ -153,6 +197,7 @@ const rodadaAtual = async() => {
                 };
 
             };
+
         };
 
         //const campeonatosPontoCorrido = campeonatos.find(campeonato => campeonato.tipoCopa === false);

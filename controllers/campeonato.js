@@ -177,9 +177,9 @@ exports.getCampeonato = asyncHandler(async (req, res, next) => {
 // @route       POST /api/v1/campeonato/:id
 // @access      Publico
 exports.createCampeonato = asyncHandler(async (req, res, next) => {
+    
     const campeonato = await Campeonato.create(req.body);
 
-   
     res.status(201).json({
         success: true,
         data: campeonato
@@ -308,8 +308,7 @@ exports.confrontosCampeonato = asyncHandler(async (req, res, next) => {
 // @route       POST /api/v1/campeonato/classificacao/:id
 // @access      Publico
 exports.classificacaoCampeonato = asyncHandler(async (req, res, next) => {
-    const campeonato = await Campeonato.findById(req.params.id).populate('mataMata.confrontos').populate('participantes');
-    //const campeonato = await (await Campeonato.findById(req.params.id).populate('participantes').populate('grupos.confrontos'));
+    const campeonato = await Campeonato.findById(req.params.id).populate('mataMata.confrontos').populate('participantes').populate('classificacao.jogador');
 
     if(!campeonato){
         return next(

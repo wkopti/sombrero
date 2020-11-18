@@ -5,20 +5,25 @@ const Chicano = require('../models/Chicano');
 const cartola = require('../utils/cartola');
 const rodada = require('./rodada');
 
-async function retornarHistoricoRodada (idChicano, rodada){
+async function retornarHistoricoRodada (idChicano, historicoRodada){
+    const rodadaBase = await rodada.retornarRodada();
+
+    if (historicoRodada >= rodadaBase.rodadaAtual){
+        return null;
+    };
     
     let query = { idChicano: idChicano, 
-                   'rodada': rodada };
+                   'rodada': historicoRodada };
     
     let historico = await Historico.findOne(query);
 
     if(!historico){
         const chicano = await Chicano.findById(idChicano);
-        const retornoCartola = await cartola(process.env.CARTOLA_TIME+'/'+chicano.idTime+'/'+rodada);
+        const retornoCartola = await cartola(process.env.CARTOLA_TIME+'/'+chicano.idTime+'/'+historicoRodada);
 
         historico = { 
                         idChicano: chicano._id,
-                        rodada: rodada,
+                        rodada: historicoRodada,
                         retornoCartola: retornoCartola,
                         pontos: retornoCartola.pontos,
                         pontosCampeonato: retornoCartola.pontos_campeonato
