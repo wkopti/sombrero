@@ -308,7 +308,7 @@ exports.confrontosCampeonato = asyncHandler(async (req, res, next) => {
 // @route       POST /api/v1/campeonato/classificacao/:id
 // @access      Publico
 exports.classificacaoCampeonato = asyncHandler(async (req, res, next) => {
-    const campeonato = await Campeonato.findById(req.params.id).populate('mataMata.confrontos').populate('participantes').populate('classificacao.jogador');
+    const campeonato = await Campeonato.findById(req.params.id).populate('mataMata.confrontos').populate('classificacao.jogador');
 
     if(!campeonato){
         return next(

@@ -3,6 +3,7 @@ const confronto = require('../controllers/confronto');
 const campeonato = require('../controllers/campeonato');
 const historico = require('../controllers/historico'); 
 const funcoesArray = require('./funcoesArray');
+const { ordernar } = require('./funcoesArray');
 
 async function atualizarConfronto(confrontoAtual) {
     const atualizado = await confronto.obterResultadoConfronto(confrontoAtual);
@@ -34,6 +35,15 @@ const rodadaAtual = async() => {
     if(rodadaAtualData.rodada_id === rodadaBase.rodadaAtual){
         msg = msg+"OK";
         rodadaAndamento = rodadaBase.rodadaAtual;
+        let schedulePartidas = [];
+        const partidasValidas = await rodada.retornarPartidasValidas();
+        partidasValidas.forEach(partida => {
+            let schedule = new Date(partida.partida_data);
+            schedulePartidas.push(schedule.getTime());
+        });
+        schedulePartidas = schedulePartidas.filter((v, i, a) => a.indexOf(v) === i);
+        schedulePartidas.sort(); 
+        console.log(schedulePartidas);
     
     } else {
         // Quais sao as partidas que valem para o cartola?
@@ -129,10 +139,12 @@ const rodadaAtual = async() => {
 
                 for (let index = 0; index < campeonatoAberto.participantes.length; index++) {
                     const participante = campeonatoAberto.participantes[index];
+                    //console.log(participante)
                     const jogosComputados = campeonatoAberto.classificacao.filter(classificacao => classificacao.jogador.toString() === participante.toString());
                     const jogosComputar = [];
                     const rodadaInicioComputar = jogosComputados.totalJogos || 0;
-                    for (let computarJogo = rodadaInicioComputar + 1; computarJogo <= rodadaFim; computarJogo++) {
+                    for (let computarJogo = rodadaInicioComputar + 1; computarJogo < rodadaFim; computarJogo++) {
+                        //console.log(computarJogo);
                         const pontosRodada = await historico.buscarPontuacaoRodada(participante,computarJogo);
                         if(pontosRodada){
                             jogosComputar.push({jogador: participante, rodada: computarJogo, pontuacao: pontosRodada});
@@ -147,7 +159,7 @@ const rodadaAtual = async() => {
                     
                     classificacaoAtualizada.push({posicao: null, jogador: participante, totalPontos: totalPontosComputados, totalJogos:  totalJogosComputados});
                 };
-
+                
                 classificacaoAtualizada.sort(funcoesArray.ordernar('totalPontos',true))
                 for (let index = 0; index < classificacaoAtualizada.length; index++) {
                     const element = classificacaoAtualizada[index];
@@ -199,10 +211,6 @@ const rodadaAtual = async() => {
             };
 
         };
-
-        //const campeonatosPontoCorrido = campeonatos.find(campeonato => campeonato.tipoCopa === false);
-        //const campeonatosCopa = campeonatos.find(campeonato => campeonato.tipoCopa === true);
-
     };
     console.log(`Há ${campeonatos.length} campeonato em aberto`);
 

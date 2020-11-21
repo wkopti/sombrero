@@ -102,6 +102,6 @@ function ordernarPorPontoSaldo(a, b){
             return -1;
         }
     }
-}
+};
 
 module.exports = { ordernar, embaralhar, dividirEmGrupos, gerarConfrontoGrupo, somarPorChave, ordernarPorPontoSaldo };
