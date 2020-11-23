@@ -3,7 +3,9 @@ const confronto = require('../controllers/confronto');
 const campeonato = require('../controllers/campeonato');
 const historico = require('../controllers/historico'); 
 const funcoesArray = require('./funcoesArray');
-const { ordernar } = require('./funcoesArray');
+const pontuacao = require('../controllers/pontuacao');
+const escalacao = require('../controllers/escalacao');
+const atualizarPontuacao = require('../schedule/atualizarPontuacao');
 
 async function atualizarConfronto(confrontoAtual) {
     const atualizado = await confronto.obterResultadoConfronto(confrontoAtual);
@@ -21,6 +23,7 @@ const rodadaAtual = async() => {
     });
 
     const rodadaAtualData = rodadas.find(r => dataAtual.getTime() <= r.inicio.getTime()) ;
+    //const rodadaAtualData = rodadas.find(r => dataAtual.getTime() >= r.inicio.getTime() && dataAtual.getTime() <= r.fim.getTime());
 
     console.log('Data atual => '+dataAtual);
     console.log('Timestamp da data atual => '+dataAtual.getTime());
@@ -31,20 +34,11 @@ const rodadaAtual = async() => {
     
     let msg = "Validando rodada carregada => ";
     
-    // Se a rodada esta correta
-    if(rodadaAtualData.rodada_id === rodadaBase.rodadaAtual){
+    // Se a rodada esta correta e o mercado esta aberto
+    if(rodadaAtualData.rodada_id === rodadaBase.rodadaAtual && rodadaAtualData.inicio.getTime() < rodadaBase.fechamento.timestamp ){
         msg = msg+"OK";
         rodadaAndamento = rodadaBase.rodadaAtual;
-        let schedulePartidas = [];
-        const partidasValidas = await rodada.retornarPartidasValidas();
-        partidasValidas.forEach(partida => {
-            let schedule = new Date(partida.partida_data);
-            schedulePartidas.push(schedule.getTime());
-        });
-        schedulePartidas = schedulePartidas.filter((v, i, a) => a.indexOf(v) === i);
-        schedulePartidas.sort(); 
-        console.log(schedulePartidas);
-    
+
     } else {
         // Quais sao as partidas que valem para o cartola?
         const partidasValidas = await rodada.retornarPartidasValidas();
@@ -59,26 +53,78 @@ const rodadaAtual = async() => {
 
         // Se a rodada esta incorreta, mas ainda nao comecou a proxima rodada e temos jogos em aberto, a rodada está em andamento
         if (dataAtual.getTime() <= rodadaAtualData.inicio.getTime() && qtdPartidasEmAberto > 0){
+            
+            // Escalacao dos chicanos na rodada
+            await escalacao.carregarEscalacao();
+
             rodadaAndamento = rodadaBase.rodadaAtual;
             msg = msg+"Rodada em andamento";
-            
-            
-            // Disparar o scheduler das partidas com tempos em comum das partidas em aberto
-            //console.log(partidasEmAberto)
-            // O scheduler de cada partida deve
+            console.log(msg);
+            console.log(`Partidas em aberto => ${qtdPartidasEmAberto}`);
 
+            let agendaCampeonatoBrasileiro = [];
+            const partidasValidas = await rodada.retornarPartidasValidas();
+            
+            partidasValidas.forEach(partida => {
+                let schedule = new Date(partida.partida_data);
+                agendaCampeonatoBrasileiro.push(schedule.getTime());
+            });
+
+            // Buscar horas unicas
+            agendaCampeonatoBrasileiro = agendaCampeonatoBrasileiro.filter((v, i, a) => a.indexOf(v) === i);
+            agendaCampeonatoBrasileiro.sort();
+            
+            var tsAgora = new Date();
+            //console.log(`Agora  => ${tsAgora.toISOString()}`);
+
+            // Scheduler partidas
+            let schedulerPartidas = [];
+            let dataInicioAnterior;
+            let dataFimAnterior;
+
+            for (let index = 0; index < agendaCampeonatoBrasileiro.length; index++) {
+                var dataInicio = new Date(agendaCampeonatoBrasileiro[index]);
+                var dataFim = new Date(agendaCampeonatoBrasileiro[index]);
+                dataFim.setHours(dataFim.getHours() + 2); // 2 horas de acompanhamento por partida
+                
+                //console.log(`Inicio => ${dataInicio.toISOString()} Fim => ${dataFim.toISOString()}`)
+                if (index > 0){
+
+                    // Demais registros
+                    if ( (dataInicio.getTime()) < (dataFimAnterior.getTime()) && ((dataInicio.getTime()) > (dataFimAnterior.getTime())) ){
+                        schedulerPartidas.splice(index - 1, 1);
+                        schedulerPartidas.push({ inicio: dataInicioAnterior, fim: dataFim });
+                    };
+                    if ( (dataInicio.getTime()) == (dataFimAnterior.getTime()) ) {
+                        schedulerPartidas.splice(index - 1, 1);
+                        schedulerPartidas.push({ inicio: dataInicioAnterior, fim: dataFim });
+                    };
+                    if ( (dataInicio.getTime()) > (dataFimAnterior.getTime()) ) {
+                        schedulerPartidas.push({ inicio: dataInicio, fim: dataFim });
+                    };
+                    dataInicioAnterior = new Date(dataInicio);
+                    dataFimAnterior = new Date(dataFim);
+
+                } else {
+                    // Primeiro registro
+                    dataInicioAnterior = new Date(dataInicio);
+                    dataFimAnterior = new Date(dataFim);
+                    schedulerPartidas.push({ inicio: dataInicioAnterior, fim: dataFimAnterior});
+                };
+                
+            };
+
+            atualizarPontuacao(schedulerPartidas); 
 
         } else {
             // Devemos deletar o que temos e carregar a nova rodada
-            //msg = msg+"NOK";
             msg = msg+"Rodada encerrada";
+            console.log(msg);
             rodadaBase = await rodada.recarregarRodada();
-
+            await escalacao.apagarEscalacao();
     
         };
     };
-
-    console.log(msg);
 
     // Confrontos
     const confrontos = await confronto.getConfrontosEmAberto(rodadaAndamento);
@@ -125,51 +171,65 @@ const rodadaAtual = async() => {
                     let confrontosMataMata = await campeonato.gerarConfrontoMataMata(campeonatoAberto.id, grupos.classificados, ultimaRodadaFaseGrupos, campeonatoAberto.jogoUnicoMataMata, campeonatoAberto.jogoUnicoFinal);
                     campeonatoAberto.mataMata.confrontos = confrontosMataMata;
 
-                    campeonatoAberto.save();
+                    await campeonatoAberto.save();
                 };
             };
 
             // Campeonato pontos corridos
             if (campeonatoAberto.tipoCopa === false && campeonatoAberto.encerrado === false ){
+                let atualizarCampeonato = false;
+                let rodadaFimComputar;
+                if (campeonatoAberto.rodadaFinal > rodadaBase.rodadaAtual){
+                    rodadaFimComputar = rodadaBase.rodadaAtual;
+                } else {
+                    rodadaFimComputar = campeonatoAberto.rodadaFinal;
+                }
                 const rodadaFim = campeonatoAberto.rodadaFinal || rodadaBase.rodadaAtual;
                 const classificacaoAtual = campeonatoAberto.classificacao.slice();
                 const classificacaoAtualizada = [];
-                //console.log("Classificacao atual")
-                //console.log(classificacaoAtual);
 
                 for (let index = 0; index < campeonatoAberto.participantes.length; index++) {
                     const participante = campeonatoAberto.participantes[index];
-                    //console.log(participante)
                     const jogosComputados = campeonatoAberto.classificacao.filter(classificacao => classificacao.jogador.toString() === participante.toString());
                     const jogosComputar = [];
-                    const rodadaInicioComputar = jogosComputados.totalJogos || 0;
-                    for (let computarJogo = rodadaInicioComputar + 1; computarJogo < rodadaFim; computarJogo++) {
-                        //console.log(computarJogo);
+                    //console.log("Jogos computados => "+ jogosComputados[0].totalJogos);
+                    //console.log("Jogos computados Array => "+ jogosComputados);
+                    //console.log("---------------------------");
+                    const rodadaInicioComputar = jogosComputados[0].totalJogos + 1 || campeonatoAberto.rodadaInicio;
+                    
+                    for (let computarJogo = rodadaInicioComputar; computarJogo <= rodadaFimComputar; computarJogo++) {
+                        atualizarCampeonato = true;
                         const pontosRodada = await historico.buscarPontuacaoRodada(participante,computarJogo);
                         if(pontosRodada){
                             jogosComputar.push({jogador: participante, rodada: computarJogo, pontuacao: pontosRodada});
                         };
                     };
-                    let totalPontosComputados = jogosComputados.totalPontos || 0;
-                    let totalJogosComputados = jogosComputados.totalJogos || 0;
-                    jogosComputar.forEach(jogo => {
-                        totalPontosComputados = totalPontosComputados + jogo.pontuacao;
-                        totalJogosComputados = totalJogosComputados + 1;
-                    });
+
+                    if (atualizarCampeonato){
+                        // Preencher classificacao
+                        let totalPontosComputados = jogosComputados.totalPontos || 0;
+                        let totalJogosComputados = jogosComputados.totalJogos || 0;
+
+                        jogosComputar.forEach(jogo => {
+                            totalPontosComputados = totalPontosComputados + jogo.pontuacao;
+                            totalJogosComputados = totalJogosComputados + 1;
+                        });
+                        
+                        classificacaoAtualizada.push({posicao: null, jogador: participante, totalPontos: totalPontosComputados, totalJogos:  totalJogosComputados});
+                    };
                     
-                    classificacaoAtualizada.push({posicao: null, jogador: participante, totalPontos: totalPontosComputados, totalJogos:  totalJogosComputados});
-                };
-                
-                classificacaoAtualizada.sort(funcoesArray.ordernar('totalPontos',true))
-                for (let index = 0; index < classificacaoAtualizada.length; index++) {
-                    const element = classificacaoAtualizada[index];
-                    element.posicao = index + 1;
                 };
 
-                //console.log("Classificacao atualizada")
-                //console.log(classificacaoAtualizada)
-                campeonatoAberto.classificacao = classificacaoAtualizada;
-                campeonatoAberto.save();
+                if (atualizarCampeonato){
+                    classificacaoAtualizada.sort(funcoesArray.ordernar('totalPontos',true))
+                    for (let index = 0; index < classificacaoAtualizada.length; index++) {
+                        const element = classificacaoAtualizada[index];
+                        element.posicao = index + 1;
+                    };
+                    campeonatoAberto.classificacao = classificacaoAtualizada;
+                    await campeonatoAberto.save();
+                };
+
             };
 
             // Campeonato do tipo copa
@@ -205,7 +265,7 @@ const rodadaAtual = async() => {
                 if (confrontosMataMata.length > 0){
                     campeonatoAberto.encerrado = true;
                     campeonatoAberto.classificacao = classificacaoMataMata;
-                    campeonatoAberto.save();
+                    await campeonatoAberto.save();
                 };
 
             };

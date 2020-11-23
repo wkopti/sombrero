@@ -3,6 +3,11 @@ const asyncHandler = require('../middleware/async');
 const Chicano = require('../models/Chicano');
 const historico = require('../controllers/historico');
 
+exports.buscarChicanos = async () => {
+    const chicanos = await Chicano.find();
+    return chicanos;
+}
+
 // @desc        Pegar todos os participantes
 // @route       GET /api/v1/chicano
 // @access      Publico

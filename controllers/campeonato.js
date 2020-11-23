@@ -134,6 +134,8 @@ exports.getClassificaoGrupos = async(campeonato) => {
     // Ordenar os classificados para a proxima fase
     classificados.sort(funcoesArray.ordernarPorPontoSaldo);
 
+    console.log('Classificacao ok');
+
     let retorno = {
        classificacaoGrupo,
        classificacaoGeral,

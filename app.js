@@ -20,7 +20,7 @@ connectDB();
 //console.log(statusRodada.retornarRodada);
 
 // Verificacoes da base
-verificarBase.rodadaAtual();
+setInterval(() => {verificarBase.rodadaAtual()},process.env.CICLO_VERIFICACAO_BASE);
 
 // Arquivos de rota
 const chicano = require('./routes/chicano');
