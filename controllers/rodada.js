@@ -27,7 +27,9 @@ exports.retornarPartidasEmAberto = async function() {
     const partidasValidas = await this.retornarPartidasValidas();
     const partidasEmAberto = partidasValidas.filter(function(partida) {
         let dataPartida = new Date(partida.partida_data);
-        return dataPartida >= dataAtual.getTime();
+        let dataPartidaFim = new Date(dataPartida);
+        dataPartidaFim.setHours(dataPartidaFim.getHours() + 2);
+        return dataPartida >= dataAtual.getTime() && dataAtual.getTime() <= dataPartidaFim.getTime();
     });
     return partidasEmAberto;
 }

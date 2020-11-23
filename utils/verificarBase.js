@@ -52,7 +52,7 @@ const rodadaAtual = async() => {
         };
 
         // Se a rodada esta incorreta, mas ainda nao comecou a proxima rodada e temos jogos em aberto, a rodada está em andamento
-        if (dataAtual.getTime() <= rodadaAtualData.inicio.getTime() && qtdPartidasEmAberto > 0){
+        if (dataAtual.getTime() <= rodadaAtualData.inicio.getTime() /*&& qtdPartidasEmAberto > 0*/){
             
             // Escalacao dos chicanos na rodada
             await escalacao.carregarEscalacao();
