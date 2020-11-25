@@ -8,22 +8,18 @@ const errorHandler = require('./middleware/error');
 const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
 const xss = require('xss-clean');
-const verificarBase = require('./utils/verificarBase');
+//const verificarBase = require('./utils/verificarBase');
+//var Queue = require('bull');
+const verificarBaseQueue = require('./queues/verificarBaseQueue');
 
 // Variaveis de ambiente
 dotenv.config({ path: './config/config.env'});
 
-// Conexao com o banco 
+// Conexao com o banco
 connectDB();
 
 // Verificacao da base
-//verificarBaseQueue.add({ data: "Oi"})
-//var verificarBaseQueue = new Queue('verificarBase',process.env.REDIS_URI);
-//verificarBase.rodadaAtual();
-//setInterval(() => {verificarBase.rodadaAtual()},process.env.CICLO_VERIFICACAO_BASE);
-verificarBase.rodadaAtual();
-
-//const teste = verificarBase.handle({ data: "teste"});
+verificarBaseQueue.criarFila();
 
 // Arquivos de rota
 const chicano = require('./routes/chicano');

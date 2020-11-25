@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "dev": "nodemon app.js",
+    "queue": "nodemon queue.js",
     "start": "NODE_ENV=prod node app"
   },
   "author": "Welder Kopti",
