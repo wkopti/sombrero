@@ -16,11 +16,14 @@ dotenv.config({ path: './config/config.env'});
 // Conexao com o banco 
 connectDB();
 
-//console.log(Math.trunc(Date.now()/1000));
-//console.log(statusRodada.retornarRodada);
+// Verificacao da base
+//verificarBaseQueue.add({ data: "Oi"})
+//var verificarBaseQueue = new Queue('verificarBase',process.env.REDIS_URI);
+//verificarBase.rodadaAtual();
+//setInterval(() => {verificarBase.rodadaAtual()},process.env.CICLO_VERIFICACAO_BASE);
+verificarBase.rodadaAtual();
 
-// Verificacoes da base
-setInterval(() => {verificarBase.rodadaAtual()},process.env.CICLO_VERIFICACAO_BASE);
+//const teste = verificarBase.handle({ data: "teste"});
 
 // Arquivos de rota
 const chicano = require('./routes/chicano');

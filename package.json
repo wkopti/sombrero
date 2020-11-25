@@ -4,7 +4,6 @@
   "description": "Sombrero - Backend",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon app.js",
     "start": "NODE_ENV=prod node app"
   },
@@ -14,6 +13,7 @@
     "nodemon": "^2.0.6"
   },
   "dependencies": {
+    "bull": "^3.19.1",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",

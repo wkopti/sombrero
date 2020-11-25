@@ -101,7 +101,7 @@ exports.deletarConfrontosCampeonato = async (idCampeonato) => {
 };
 
 exports.getConfrontosEmAberto = async (rodadaAndamento) => {
-    const confrontos = await Confronto.find({ rodadaCartola: { $lt: rodadaAndamento }, encerrado: false });
+    const confrontos = await Confronto.find({ rodadaCartola: { $lte: rodadaAndamento }, encerrado: false });
     return confrontos;
 };
 

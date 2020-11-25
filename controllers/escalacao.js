@@ -10,7 +10,6 @@ exports.apagarEscalacao = async() => {
         arrChicanos.push(chicano.id);
     });
     await Escalacao.deleteMany({"idChicano": { $in: arrChicanos }});
-    console.log("apagamos");
 };
 
 exports.carregarEscalacao = async() => {
