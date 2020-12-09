@@ -23,3 +23,8 @@ exports.carregarEscalacao = async() => {
         };
     };
 };
+
+exports.retornarEscaladao = async(idChicano) => {
+    let escalacaoChicano = await Escalacao.find({ idChicano : idChicano });
+    return escalacaoChicano;
+};

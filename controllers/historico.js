@@ -8,7 +8,7 @@ const rodada = require('./rodada');
 async function retornarHistoricoRodada (idChicano, historicoRodada){
     const rodadaBase = await rodada.retornarRodada();
 
-    if (historicoRodada >= rodadaBase.rodadaAtual){
+    if (historicoRodada > rodadaBase.rodadaAtual){
         return null;
     };
     
@@ -17,19 +17,25 @@ async function retornarHistoricoRodada (idChicano, historicoRodada){
     
     let historico = await Historico.findOne(query);
 
+    // Se nao existe historico, buscamos a pontuacao da rodada
     if(!historico){
+
         const chicano = await Chicano.findById(idChicano);
         const retornoCartola = await cartola(process.env.CARTOLA_TIME+'/'+chicano.idTime+'/'+historicoRodada);
 
-        historico = { 
-                        idChicano: chicano._id,
-                        rodada: historicoRodada,
-                        retornoCartola: retornoCartola,
-                        pontos: retornoCartola.pontos,
-                        pontosCampeonato: retornoCartola.pontos_campeonato
-                    };
+        // Se existe mensagem, é provavel que o mercado esteja em manutenção
+        if (!retornoCartola.mensagem){
+            historico = { 
+                idChicano: chicano._id,
+                rodada: historicoRodada,
+                retornoCartola: retornoCartola,
+                pontos: retornoCartola.pontos,
+                pontosCampeonato: retornoCartola.pontos_campeonato
+            };
 
-        Historico.create(historico);
+            Historico.create(historico);
+        };
+        
     };
 
     return historico;

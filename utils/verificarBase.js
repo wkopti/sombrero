@@ -3,18 +3,51 @@ const confronto = require('../controllers/confronto');
 const campeonato = require('../controllers/campeonato');
 const historico = require('../controllers/historico'); 
 const funcoesArray = require('./funcoesArray');
-const pontuacao = require('../controllers/pontuacao');
 const escalacao = require('../controllers/escalacao');
+const queue = require('./queue');
+//const atualizarPontuacaoQueue = require('../queues/atualizarPontuacaoQueue');
 
 async function atualizarConfronto(confrontoAtual) {
     const atualizado = await confronto.obterResultadoConfronto(confrontoAtual);
     return atualizado;
 };
 
+const retornarSchedulerPartidas = async() => {
+    // Horario em comum das partidas validas para o cartola
+    const partidasValidas = await rodada.retornarPartidasValidas();
+    const horarioPartidas = partidasValidas.map(partida => partida.partida_data)
+                                           .filter((v, i, a) => a.indexOf(v) === i)
+                                           .sort();
+    
+    // Geracao do scheduler de acompanhamento
+    const scheduler = [];
+    horarioPartidas.forEach(horario => {
+        let horarioInicio = new Date(horario);
+        let qtdHorasAcompanhamento = 2;
+        let horarioFim = new Date(horario);
+        horarioFim.setUTCHours(horarioFim.getUTCHours() + qtdHorasAcompanhamento);
+
+        if (scheduler.length == 0){
+            scheduler.push({inicio: horarioInicio, fim: horarioFim});
+        } else {
+            let ultimoScheduler = scheduler[scheduler.length-1];
+            
+            if (horarioInicio > ultimoScheduler.fim){
+                scheduler.push({inicio: horarioInicio, fim: horarioFim});
+            }else if (horarioInicio > ultimoScheduler.inicio && horarioInicio < ultimoScheduler.fim){
+                scheduler.splice(scheduler.length-1,1);
+                scheduler.push({inicio: ultimoScheduler.inicio, fim: horarioFim});
+            };
+
+        };
+
+    });
+
+    return scheduler;
+};
+
 const rodadaAtual = async() => {
     let rodadaBase = await rodada.retornarRodada();
-    const dataAtual = new Date;
-    let rodadaAndamento;
     let rodadas = [];
     let ts = new Date().getTime()/1000;
 
@@ -25,21 +58,22 @@ const rodadaAtual = async() => {
     //const rodadaAtualData = rodadas.find(r => dataAtual.getTime() <= r.inicio.getTime()) ;
     //const rodadaAtualData = rodadas.find(r => dataAtual.getTime() >= r.inicio.getTime() && dataAtual.getTime() <= r.fim.getTime());
 
-    console.log('Data atual =>',dataAtual);
-    console.log('Timestamp da data atual =>',dataAtual.getTime());
-    console.log('Quantas rodadas =>',rodadas.length);
+    //console.log('Data atual =>',dataAtual);
+    //console.log('Timestamp da data atual =>',dataAtual.getTime());
+    //console.log('Quantas rodadas =>',rodadas.length);
     //console.log('Rodada encontrada (com base na data atual) => '+ rodadaAtualData.rodada_id);
     //console.log('Timestamp do inicio da rodada encontrada (com base na data atual) => '+ rodadaAtualData.inicio.getTime());
-    console.log('Rodada atual carregada no banco =>',rodadaBase.rodadaAtual);
+    //console.log('Rodada atual carregada no banco =>',rodadaBase.rodadaAtual);
     
     let retornoRodadaBase = await rodada.retornarRodada();
     let rodadaCarregada = retornoRodadaBase.rodadas.find(rodada => rodada.rodada_id === retornoRodadaBase.rodadaAtual);
+    let tsRodadaCarregada = new Date(rodadaCarregada.fim).getTime()/1000;
     let rodadaAtual;
     let mercadoAberto = true;
 
     let msg = "Validando rodada carregada =>";
 
-    if(ts >= rodadaCarregada.fim.getTime()){
+    if(ts >= tsRodadaCarregada){
         console.log(msg, "Rodada atual encerrada, carregar nova rodada");
         retornoRodadaBase = await rodada.recarregarRodada();
         await escalacao.apagarEscalacao();
@@ -55,25 +89,26 @@ const rodadaAtual = async() => {
 
     // Definimos a rodada atual
     rodadaAtual = retornoRodadaBase.rodadaAtual;
+    console.log("rodadaAtual",rodadaAtual)
 
-    // Se o mercado fechou => Mudei para true só para teste mas é false !mercadoAberto
-    if(mercadoAberto){
+    // Se o mercado fechou
+    if(!mercadoAberto){
 
         // Carregamos a escalacao feita por todos os jogadores da base
         await escalacao.carregarEscalacao();
 
-        // Horario em comum das partidas validas para o cartola
-        const partidasValidas = await rodada.retornarPartidasValidas();
-        const horarioPartidas = partidasValidas.map(partida => partida.partida_data)
-                                               .filter((v, i, a) => a.indexOf(v) === i)
-                                               .sort();
-        console.log(horarioPartidas);
-        
+        const scheduler = await retornarSchedulerPartidas();
+        scheduler.forEach(agenda => {
+            queue.queue.add('atualizarPontuacao',null,agenda.inicio,agenda.fim);
+            //queue.add('atualizarPontuacao',null,agenda.inicio,agenda.fim);
+            //atualizarPontuacaoQueue.criarFila(`Jogo => ${agenda.inicio} / ${agenda.fim}`,agenda.inicio, agenda.fim);
+        });
+ 
     };
 
     // Campeonatos nao encerrados
     const campeonatos = await campeonato.getCampeonatosEmAberto();
-    console.log(`Há ${campeonatos.length} campeonato em aberto`);
+    //console.log(`Há ${campeonatos.length} campeonato em aberto`);
     if (campeonatos.length > 0){
 
         for (let index = 0; index < campeonatos.length; index++) {
@@ -99,6 +134,8 @@ const rodadaAtual = async() => {
                     if(rodadaInicioComputar <= rodadaFimComputar){
                         for (let computarJogo = rodadaInicioComputar; computarJogo < rodadaFimComputar; computarJogo++) {
                             atualizarPontuacaoParticipante = true;
+                            console.log("participante",participante)
+                            console.log("computarJogo",computarJogo)
                             const pontosRodada = await historico.buscarPontuacaoRodada(participante,computarJogo);
                             if(pontosRodada){
                                 jogosComputar.push({jogador: participante, rodada: computarJogo, pontuacao: pontosRodada});
@@ -149,7 +186,7 @@ const rodadaAtual = async() => {
 
                 // Se nao precisamos mais atualizar a classificacao e a rodada fim do campeonato chegou, terminamos o campeonato
                 if(!atualizarClassificacaoCampeonato && campeonatoAberto.rodadaFinal < rodadaAtual){
-                    console.log("Campeonato Encerrado =>",campeonatoAberto.nome);
+                    //console.log("Campeonato Encerrado =>",campeonatoAberto.nome);
                     campeonatoAberto.encerrado = true;
                     await campeonatoAberto.save();
                 };
@@ -234,7 +271,7 @@ const rodadaAtual = async() => {
     confrontos.sort(funcoesArray.ordernar('rodadaCartola', false));
 
     if (confrontos.length > 0) {
-        console.log(`Há ${confrontos.length} confrontos que precisam ser atualizados` );
+        //console.log(`Há ${confrontos.length} confrontos que precisam ser atualizados` );
         for (var i = 0; i < confrontos.length; i++){
             console.log(`Atualizar o confronto => ${confrontos[i]._id}`);
             confrontos[i] = await atualizarConfronto(confrontos[i]);
@@ -243,4 +280,4 @@ const rodadaAtual = async() => {
 
 };
 
-module.exports = { rodadaAtual }
+module.exports = { rodadaAtual, retornarSchedulerPartidas }

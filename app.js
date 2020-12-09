@@ -8,9 +8,7 @@ const errorHandler = require('./middleware/error');
 const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
 const xss = require('xss-clean');
-//const verificarBase = require('./utils/verificarBase');
-//var Queue = require('bull');
-const verificarBaseQueue = require('./queues/verificarBaseQueue');
+const { queue } = require('./utils/queue');
 
 // Variaveis de ambiente
 dotenv.config({ path: './config/config.env'});
@@ -19,13 +17,14 @@ dotenv.config({ path: './config/config.env'});
 connectDB();
 
 // Verificacao da base
-verificarBaseQueue.criarFila();
+queue.add('verificarBase');
 
 // Arquivos de rota
 const chicano = require('./routes/chicano');
 const campeonato = require('./routes/campeonato');
 const historico = require('./routes/historico');
 const confronto = require('./routes/confronto');
+const pontuacao = require('./routes/pontuacao');
 
 const app = express();
 
@@ -62,6 +61,7 @@ app.use('/api/v1/chicano', chicano);
 app.use('/api/v1/campeonato', campeonato);
 app.use('/api/v1/historico', historico);
 app.use('/api/v1/confronto',confronto);
+app.use('/api/v1/pontuacao',pontuacao);
 
 app.use(errorHandler);
 
@@ -73,7 +73,6 @@ const server = app.listen(
 );
 
 // Handle erros
-
 process.on('unhandledRejection', (err, promise) => {
     console.log(`Error:${err.message} `);
     server.close(() => process.exit(1));

@@ -9,6 +9,14 @@ const PontuacaoSchema = new mongoose.Schema({
     posicoes: {},
     total_atletas: {
         type: Number
+    },
+    criadoEm: {
+        type: Date,
+        default: Date.now
+    },
+    atualizadoEm: {
+        type: Date,
+        default: Date.now
     }
 });
 
